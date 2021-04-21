@@ -23,6 +23,9 @@ namespace ProcessWordNet
                 Console.WriteLine("请指定参数！ 1：输入文件  2：输入文件");
                 return;
             }
+
+            string fileNameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(args[0]);
+
             Microsoft.Office.Interop.Word.Application wapp = new Microsoft.Office.Interop.Word.Application();
             MSWord.Document wordDoc;
             wapp.Visible = true;
@@ -32,7 +35,7 @@ namespace ProcessWordNet
             object miss = System.Reflection.Missing.Value;
             wordDoc = wapp.Documents.Open(ref filename, ref miss, ref isread, ref miss, ref miss, ref miss, ref miss, ref miss, ref miss, ref miss, ref miss, ref isvisible, ref miss, ref miss, ref miss, ref miss);
 
-            WordParagraph map = createObject(wordDoc.Paragraphs);
+            WordParagraph map = createObject(fileNameWithoutExtension, wordDoc.Paragraphs);
 
             Console.WriteLine(map);
 
@@ -48,10 +51,11 @@ namespace ProcessWordNet
             File.WriteAllText(args[1], jsonString);
         }
 
-        static WordParagraph createObject(MSWord.Paragraphs paras)
+        static WordParagraph createObject(string fileNameWithoutExtension, MSWord.Paragraphs paras)
         {
             WordParagraph root = new WordParagraph();
             root.outline = 0;
+            root.title = fileNameWithoutExtension;
             root.children = new List<WordParagraph>();
 
             WordParagraph wpTemp = root;
