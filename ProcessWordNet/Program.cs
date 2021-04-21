@@ -54,9 +54,9 @@ namespace ProcessWordNet
             root.outline = 0;
             root.children = new List<WordParagraph>();
 
-            WordParagraph wpTemp = null;
+            WordParagraph wpTemp = root;
             WordParagraph wp = null;
-            StringBuilder sb = null;
+            StringBuilder sb = new StringBuilder(); ;
             //HashMap<int,WordParagraph> map = new HashMap<int, WordParagraph>();
 
             foreach (MSWord.Paragraph para in paras)
@@ -81,30 +81,43 @@ namespace ProcessWordNet
                     if (wpTemp != null)
                     {
                         wpTemp.content = sb.ToString();
+                        // 上一个大纲与当前大纲的级别差
                         switch (wpTemp.outline - wp.outline)
                         {
                             // 下三级
                             case -3:
                                 {
                                     {
+                                        // 补大纲
                                         WordParagraph wp2 = new WordParagraph();
                                         wp2.outline = wp.outline-1;
                                         wp2.title = "";
                                         wp2.children = new List<WordParagraph>();
 
+                                        // 将“补大纲”加入到wpTemp子项
                                         wpTemp.children.Add(wp2);
+                                        wp2.parent = wpTemp;
+
+                                        // 将“补大纲”赋值到wpTemp
+                                        wpTemp = wp2;
 
                                         {
+                                            // 补大纲
                                             WordParagraph wp3 = new WordParagraph();
                                             wp3.outline = wp.outline - 2;
                                             wp3.title = "";
                                             wp3.children = new List<WordParagraph>();
 
-                                            wp2.children.Add(wp3);
+                                            // 将“补大纲”加入到wpTemp子项
+                                            wpTemp.children.Add(wp3);
+                                            wp3.parent = wpTemp;
 
-                                            wp3.children.Add(wp);
+                                            // 将“补大纲”赋值到wpTemp
+                                            wpTemp = wp3;
                                         }
 
+                                        // 当前加入到“补大纲”子项
+                                        wpTemp.children.Add(wp);
                                     }
 
                                     wp.parent = wpTemp;
@@ -114,13 +127,20 @@ namespace ProcessWordNet
                             case -2:
                                 {
                                     {
+                                        // 补大纲
                                         WordParagraph wp2 = new WordParagraph();
                                         wp2.outline = wp.outline-1;
                                         wp2.title = "";
                                         wp2.children = new List<WordParagraph>();
 
+                                        // 将“补大纲”加入到wpTemp子项
                                         wpTemp.children.Add(wp2);
+                                        wp2.parent = wpTemp;
 
+                                        // 将“补大纲”赋值到wpTemp
+                                        wpTemp = wp2;
+
+                                        // 当前加入到“补大纲”子项
                                         wp2.children.Add(wp);
                                     }
 
