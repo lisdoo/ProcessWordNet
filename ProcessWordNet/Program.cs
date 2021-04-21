@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 using System.Data.OleDb;
 using MSWord = Microsoft.Office.Interop.Word;
 using System.IO;
-using Lucene.Net.Support;
 using System.Runtime.Serialization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
 
 namespace ProcessWordNet
 {
@@ -33,8 +34,17 @@ namespace ProcessWordNet
 
             WordParagraph map = createObject(wordDoc.Paragraphs);
 
-            Console.WriteLine(map); 
-            string jsonString = JsonSerializer.Serialize(map);
+            Console.WriteLine(map);
+
+            var options = new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.All, UnicodeRanges.All),
+                WriteIndented = true
+            };
+
+
+
+            string jsonString = JsonSerializer.Serialize(map, options);
             File.WriteAllText(args[1], jsonString);
         }
 
@@ -214,7 +224,7 @@ namespace ProcessWordNet
                         // 初始临时对象
                         wpTemp = wp;
                         root.children.Add(wpTemp);
-                        wpTemp.parent = wpTemp;
+                        wpTemp.parent = root;
                     }
 
                     // 父对象设置到当前对象的属性
