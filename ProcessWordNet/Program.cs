@@ -18,13 +18,22 @@ namespace ProcessWordNet
     {
         static void Main(string[] args)
         {
-            if (args.Length < 2)
+            if (args.Length == 0)
             {
-                Console.WriteLine("请指定参数！ 1：输入文件  2：输入文件");
+                Console.WriteLine("请至少指定一个参数！ \r\n\t1：输入文件\r\n\t2：输出文件（如未指定输出文件为同目录下同名文件，后缀为“.json”）");
                 return;
             }
 
             string fileNameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(args[0]);
+            string outputFile;
+            if (args.Length == 1)
+            {
+                string path = Path.GetDirectoryName(args[0]);
+                outputFile = path + "\\" + fileNameWithoutExtension + ".json";
+            } else
+            {
+                outputFile = args[1];
+            }
 
             Microsoft.Office.Interop.Word.Application wapp = new Microsoft.Office.Interop.Word.Application();
             MSWord.Document wordDoc;
@@ -48,7 +57,7 @@ namespace ProcessWordNet
 
 
             string jsonString = JsonSerializer.Serialize(map, options);
-            File.WriteAllText(args[1], jsonString);
+            File.WriteAllText(outputFile, jsonString);
         }
 
         static WordParagraph createObject(string fileNameWithoutExtension, MSWord.Paragraphs paras)
