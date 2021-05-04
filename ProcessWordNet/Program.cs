@@ -16,6 +16,8 @@ namespace ProcessWordNet
 {
     class Program
     {
+        static Microsoft.Office.Interop.Word.Application wapp = new Microsoft.Office.Interop.Word.Application();
+
         static void Main(string[] args)
         {
             if (args.Length == 0)
@@ -25,17 +27,16 @@ namespace ProcessWordNet
             }
 
             string fileNameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(args[0]);
+            string path = Path.GetDirectoryName(args[0]) + "\\";
             string outputFile;
             if (args.Length == 1)
             {
-                string path = Path.GetDirectoryName(args[0]);
-                outputFile = path + "\\" + fileNameWithoutExtension + ".json";
+                outputFile = path + fileNameWithoutExtension + ".json";
             } else
             {
                 outputFile = args[1];
             }
 
-            Microsoft.Office.Interop.Word.Application wapp = new Microsoft.Office.Interop.Word.Application();
             MSWord.Document wordDoc;
             wapp.Visible = true;
             object filename = args[0];
@@ -44,7 +45,7 @@ namespace ProcessWordNet
             object miss = System.Reflection.Missing.Value;
             wordDoc = wapp.Documents.Open(ref filename, ref miss, ref isread, ref miss, ref miss, ref miss, ref miss, ref miss, ref miss, ref miss, ref miss, ref isvisible, ref miss, ref miss, ref miss, ref miss);
 
-            WordParagraph map = createObject(fileNameWithoutExtension, wordDoc.Paragraphs);
+            WordParagraph map = createObject(fileNameWithoutExtension, wordDoc.Paragraphs, path);
 
             Console.WriteLine(map);
 
@@ -58,10 +59,15 @@ namespace ProcessWordNet
 
             string jsonString = JsonSerializer.Serialize(map, options);
             File.WriteAllText(outputFile, jsonString);
+
+            wordDoc.Close();
         }
 
-        static WordParagraph createObject(string fileNameWithoutExtension, MSWord.Paragraphs paras)
+        static WordParagraph createObject(string fileNameWithoutExtension, MSWord.Paragraphs paras, string path)
         {
+            int paraCount = 1;
+            string tempPrefix = "temp_";
+
             WordParagraph root = new WordParagraph();
             root.outline = 0;
             root.title = fileNameWithoutExtension;
@@ -69,8 +75,8 @@ namespace ProcessWordNet
 
             WordParagraph wpTemp = root;
             WordParagraph wp = null;
-            StringBuilder sb = new StringBuilder(); ;
-            //HashMap<int,WordParagraph> map = new HashMap<int, WordParagraph>();
+            StringBuilder sb = new StringBuilder();
+            var oDoc = wapp.Documents.Add();
 
             foreach (MSWord.Paragraph para in paras)
             {
@@ -94,6 +100,8 @@ namespace ProcessWordNet
                     if (wpTemp != null)
                     {
                         wpTemp.content = sb.ToString();
+                        oDoc.SaveAs2(String.Format("{0}{1}{2,5}{3}", path, tempPrefix, paraCount++, ".docx"));
+                        oDoc.Close();
                         // 上一个大纲与当前大纲的级别差
                         switch (wpTemp.outline - wp.outline)
                         {
@@ -103,7 +111,7 @@ namespace ProcessWordNet
                                     {
                                         // 补大纲
                                         WordParagraph wp2 = new WordParagraph();
-                                        wp2.outline = wp.outline-1;
+                                        wp2.outline = wp.outline - 1;
                                         wp2.title = "";
                                         wp2.children = new List<WordParagraph>();
 
@@ -142,7 +150,7 @@ namespace ProcessWordNet
                                     {
                                         // 补大纲
                                         WordParagraph wp2 = new WordParagraph();
-                                        wp2.outline = wp.outline-1;
+                                        wp2.outline = wp.outline - 1;
                                         wp2.title = "";
                                         wp2.children = new List<WordParagraph>();
 
@@ -175,7 +183,7 @@ namespace ProcessWordNet
                                     wpTemp.parent.children.Add(wp);
 
                                     wp.parent = wpTemp.parent;
-                                } 
+                                }
                                 break;
                             // 上1级
                             case 1:
@@ -264,6 +272,7 @@ namespace ProcessWordNet
                     Console.WriteLine(wpTemp.outline);
 
                     sb = new StringBuilder();
+                    oDoc = wapp.Documents.Add();
 
                     // 当为段落时
                 } else
@@ -271,11 +280,19 @@ namespace ProcessWordNet
                     if (wp == null) continue;
                     sb.Append(para.Range.Text.ToString());
                     sb.Append("\n");
+
+                    para.Range.Copy();
+
+                    var paragraph1 = oDoc.Content.Paragraphs.Add();
+                    paragraph1.Range.Paste();
                 }
             }
 
-            if (wp != null)
+            if (wp != null) {
                 wp.content = sb.ToString();
+                oDoc.SaveAs2(String.Format("{0}{1}{2,5}{3}", path, tempPrefix, paraCount++, ".docx"));
+                oDoc.Close();
+            }
 
             return root;
         }
