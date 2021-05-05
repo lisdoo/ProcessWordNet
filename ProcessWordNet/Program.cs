@@ -17,6 +17,7 @@ namespace ProcessWordNet
     class Program
     {
         static Microsoft.Office.Interop.Word.Application wapp = new Microsoft.Office.Interop.Word.Application();
+        static object oMissing = System.Reflection.Missing.Value;
 
         static void Main(string[] args)
         {
@@ -75,7 +76,7 @@ namespace ProcessWordNet
 
             WordParagraph wpTemp = root;
             WordParagraph wp = null;
-            StringBuilder sb = new StringBuilder();
+            //StringBuilder sb = new StringBuilder();
             var oDoc = wapp.Documents.Add();
 
             foreach (MSWord.Paragraph para in paras)
@@ -99,9 +100,15 @@ namespace ProcessWordNet
                     // 对比临时对象和当前对象层次，并更新临时对象
                     if (wpTemp != null)
                     {
-                        wpTemp.content = sb.ToString();
-                        oDoc.SaveAs2(String.Format("{0}{1}{2,5}{3}", path, tempPrefix, paraCount++, ".docx"));
+                        //wpTemp.content = sb.ToString();
+                        string tempFile = String.Format("{0}{1}{2,5}{3}", path, tempPrefix, paraCount++, ".html");
+                        //oDoc.SaveAs2(tempFile);
+                        oDoc.SaveAs(tempFile, MSWord.WdSaveFormat.wdFormatHTML, ref oMissing, ref oMissing,
+                                   ref oMissing, ref oMissing, ref oMissing, ref oMissing,
+                                   ref oMissing, ref oMissing, ref oMissing, Encoding.UTF8,
+                                   ref oMissing, ref oMissing, ref oMissing, ref oMissing);
                         oDoc.Close();
+                        wpTemp.content = System.IO.File.ReadAllText(tempFile, Encoding.UTF8);
                         // 上一个大纲与当前大纲的级别差
                         switch (wpTemp.outline - wp.outline)
                         {
@@ -271,15 +278,15 @@ namespace ProcessWordNet
                     // 父对象设置到当前对象的属性
                     Console.WriteLine(wpTemp.outline);
 
-                    sb = new StringBuilder();
+                    //sb = new StringBuilder();
                     oDoc = wapp.Documents.Add();
 
                     // 当为段落时
                 } else
                 {
                     if (wp == null) continue;
-                    sb.Append(para.Range.Text.ToString());
-                    sb.Append("\n");
+                    //sb.Append(para.Range.Text.ToString());
+                    //sb.Append("\n");
 
                     para.Range.Copy();
 
@@ -289,9 +296,15 @@ namespace ProcessWordNet
             }
 
             if (wp != null) {
-                wp.content = sb.ToString();
-                oDoc.SaveAs2(String.Format("{0}{1}{2,5}{3}", path, tempPrefix, paraCount++, ".docx"));
+                //wp.content = sb.ToString();
+                string tempFile = String.Format("{0}{1}{2,5}{3}", path, tempPrefix, paraCount++, ".html");
+                //oDoc.SaveAs2(tempFile);
+                oDoc.SaveAs(tempFile, MSWord.WdSaveFormat.wdFormatHTML, ref oMissing, ref oMissing,
+                                   ref oMissing, ref oMissing, ref oMissing, ref oMissing,
+                                   ref oMissing, ref oMissing, ref oMissing, Encoding.UTF8,
+                                   ref oMissing, ref oMissing, ref oMissing, ref oMissing);
                 oDoc.Close();
+                wpTemp.content = System.IO.File.ReadAllText(tempFile, Encoding.UTF8);
             }
 
             return root;
